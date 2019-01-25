@@ -7,30 +7,17 @@
 #include <string>
 #include <vector>
 #include <iostream> 
+#include <fstream>
 
 Game::Game(SDL_Window* __w, SDL_GLContext __c) :
     window(__w),
     glcontext(__c) {  
+    program_id = 0;
+    vertex_shader_filename = "src/shaders/330es.vert";
+    fragment_shader_filename = "src/shaders/330es.frag";
 }
 
-std::string vertex_shader = "#version 300 es\n"
-                           "in vec3 pos;"
-                           "void main() {"
-                           "gl_Position = vec4(pos, 1);"
-                           "}"; 
-  
-std::string fragment_shader = "#version 300 es\n"
-                            "#undef lowp\n"
-                            "#undef mediump\n"
-                            "#undef highp\n"
-                            "precision mediump float;\n"
-                             "out vec4 fragmentColor;"
-                             "void main() {"
-                             "fragmentColor = vec4(1.0, 0.0, 0.0, 1.0);"
-                             "}"; 
-
-
-GLuint load_shaders() {
+void Game::load_shaders() {
     GLuint vertex_shader_id = glCreateShader(GL_VERTEX_SHADER);
     GLuint fragment_shader_id = glCreateShader(GL_FRAGMENT_SHADER);
 
@@ -38,6 +25,9 @@ GLuint load_shaders() {
     int info_len;
 
     // compile and check vertex shader
+    std::ifstream vertex_shader_fs(vertex_shader_filename);
+    std::string vertex_shader((std::istreambuf_iterator<char>(vertex_shader_fs)),
+                               std::istreambuf_iterator<char>());
     char const * p_vertex_shader = vertex_shader.c_str();
     glShaderSource(vertex_shader_id, 1, &p_vertex_shader , NULL);
     glCompileShader(vertex_shader_id);
@@ -50,6 +40,9 @@ GLuint load_shaders() {
     }
 
     // compile and check fragment shader
+    std::ifstream fragment_shader_fs(fragment_shader_filename);
+    std::string fragment_shader((std::istreambuf_iterator<char>(fragment_shader_fs)),
+                                 std::istreambuf_iterator<char>());
     char const * p_fragment_shader = fragment_shader.c_str();
     glShaderSource(fragment_shader_id, 1, &p_fragment_shader , NULL);
     glCompileShader(fragment_shader_id);
@@ -61,7 +54,7 @@ GLuint load_shaders() {
         std::cout << &error_msg[0] << std::endl;
     }
 
-    GLuint program_id = glCreateProgram();
+    program_id = glCreateProgram();
     glAttachShader(program_id, vertex_shader_id);
     glAttachShader(program_id, fragment_shader_id);
     glLinkProgram(program_id);
@@ -75,20 +68,41 @@ GLuint load_shaders() {
 
     glDeleteShader(vertex_shader_id);
     glDeleteShader(fragment_shader_id);
-
-    return program_id;
 }
 
 void Game::run() {
-
-
-    GLuint program_id = load_shaders();
-
+    load_shaders();
     glDisableVertexAttribArray(0);
     glUseProgram(program_id);
+
+    SDL_Event e;
+    bool quit = false;
+    Uint32 startTime = 0;
+    Uint32 endTime = 0;
+    Uint32 delta = 0;
+    short fps = 60;
+    short timePerFrame = 16; // miliseconds
+    while (!quit) {
+        while (SDL_PollEvent(&e)) {
+            if (e.type == SDL_QUIT) {
+                quit = true;
+            }
+        }
+        update();
+        endTime = SDL_GetTicks();
+        delta = endTime - startTime;
+        if (delta >= timePerFrame) {
+            fps = 1000 / delta;
+            draw();
+            startTime = endTime;
+        }
+        std::cerr << "FPS is: " << fps << std::endl;
+    }
+}
+
+
+void Game::draw() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-
     GLuint vertex_array_id;
     glGenVertexArrays(1, &vertex_array_id);
     glBindVertexArray(vertex_array_id);
@@ -114,5 +128,8 @@ void Game::run() {
     glDrawArrays(GL_TRIANGLES, 0, 3);
 
     SDL_GL_SwapWindow(window);
-    SDL_Delay(2000);
+}
+
+void Game::update() {
+
 }
