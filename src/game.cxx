@@ -77,11 +77,11 @@ void Game::run() {
 
     SDL_Event e;
     bool quit = false;
-    Uint32 startTime = 0;
-    Uint32 endTime = 0;
-    Uint32 delta = 0;
-    short fps = 60;
-    short timePerFrame = 16; // miliseconds
+    int start_time = 0;
+    int end_time = 0;
+    int delta = 0;
+    int fps = 60;
+    int time_per_frame = 16; // miliseconds
     while (!quit) {
         while (SDL_PollEvent(&e)) {
             if (e.type == SDL_QUIT) {
@@ -89,12 +89,12 @@ void Game::run() {
             }
         }
         update();
-        endTime = SDL_GetTicks();
-        delta = endTime - startTime;
-        if (delta >= timePerFrame) {
+        end_time = SDL_GetTicks();
+        delta = end_time - start_time;
+        if (delta >= time_per_frame) {
             fps = 1000 / delta;
             draw();
-            startTime = endTime;
+            start_time = end_time;
         }
         std::cerr << "FPS is: " << fps << std::endl;
     }
