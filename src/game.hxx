@@ -5,6 +5,9 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_opengl.h>
 #include <string>
+#include <vector>
+#include <GL/gl.h>
+#include "rect.hxx"
 
 class Game {
 private:
@@ -13,6 +16,11 @@ private:
     GLuint program_id;
     std::string vertex_shader_filename;
     std::string fragment_shader_filename;
+    std::vector<Rect> rects;
+    GLuint vertex_buffer;
+    GLint t_matrix_location;
+    GLfloat t_matrix[16]; 
+    Rect rect;
 
     void load_shaders();
     void update();

@@ -1,4 +1,4 @@
-OBJS = src/main.cxx src/game.cxx
+OBJS = src/main.cxx src/game.cxx src/rect.cxx
 COMPILER_FLAGS = -O3 -std=c++14 -w
 LINKER_FLAGS = -lSDL2 -lGL -lGLU -lGLEW
 OBJ_NAME = bin/main

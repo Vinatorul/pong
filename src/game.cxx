@@ -8,10 +8,19 @@
 #include <vector>
 #include <iostream> 
 #include <fstream>
+#include "rect.hxx"
 
 Game::Game(SDL_Window* __w, SDL_GLContext __c) :
     window(__w),
-    glcontext(__c) {  
+    glcontext(__c),
+    t_matrix({
+        1.0f, 0.0f, 0.0f, 0.0f,
+        0.0f, 1.0f, 0.0f, 0.0f, 
+        0.0f, 0.0f, 1.0f, 0.0f, 
+        0.0f, 0.0f, 0.0f, 1.0f
+    }),
+    rect(0,0,0,0)
+{  
     program_id = 0;
     vertex_shader_filename = "src/shaders/330es.vert";
     fragment_shader_filename = "src/shaders/330es.frag";
@@ -72,8 +81,19 @@ void Game::load_shaders() {
 
 void Game::run() {
     load_shaders();
-    glDisableVertexAttribArray(0);
-    glUseProgram(program_id);
+
+    GLuint vertex_array_id;
+    glGenVertexArrays(1, &vertex_array_id);
+    glBindVertexArray(vertex_array_id);
+    glGenBuffers(1, &vertex_buffer);
+    glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
+    glBufferData(GL_ARRAY_BUFFER, rect.mesh_size(), rect.get_mesh(), GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    t_matrix_location = glGetUniformLocation(program_id, "tmatrix");
+    // t_matrix[12]  = 0.2f;
+    // t_matrix[13]  = 0.2f;
+    t_matrix[0] = 0.1f;
+    t_matrix[5] = 0.1f;
 
     SDL_Event e;
     bool quit = false;
@@ -96,40 +116,29 @@ void Game::run() {
             draw();
             start_time = end_time;
         }
-        std::cerr << "FPS is: " << fps << std::endl;
+        // std::cerr << "FPS is: " << fps << std::endl;
     }
 }
 
 
 void Game::draw() {
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    GLuint vertex_array_id;
-    glGenVertexArrays(1, &vertex_array_id);
-    glBindVertexArray(vertex_array_id);
-    static const GLfloat g_vertex_buffer_data[] = {
-       -1.0f, -1.0f, 0.0f,
-       1.0f, -1.0f, 0.0f,
-       0.0f,  1.0f, 0.0f,
-    };  
-    GLuint vertex_buffer;
-    glGenBuffers(1, &vertex_buffer);
+    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);    
+    glUseProgram(program_id);
+
+    rect.apply_transform(t_matrix);
+    rect.update();
+    glUniformMatrix4fv (t_matrix_location, 1, GL_FALSE, t_matrix);
     glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_STATIC_DRAW);
     glEnableVertexAttribArray(0);
-    glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
-    glVertexAttribPointer(
-       0,                  
-       3,                  
-       GL_FLOAT,           
-       GL_FALSE,           
-       0,                  
-       (void*)0            
-    );
-    glDrawArrays(GL_TRIANGLES, 0, 3);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+    glDisableVertexAttribArray(0);
+    glUseProgram(0);
 
     SDL_GL_SwapWindow(window);
 }
 
 void Game::update() {
-
 }
